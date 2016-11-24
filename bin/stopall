@@ -1,0 +1,22 @@
+#!/bin/bash
+
+echo "stopping fleet and etcd..."
+
+HOSTNAMES_MAIN="etcd1"
+HOSTNAMES_SUB="fleet1 fleet2 fleet3"
+
+for host in ${HOSTNAMES_MAIN}; do
+	echo "stopping fleet and etcd services on $host..."
+	ssh -t $host sudo systemctl stop fleet.service
+	sleep 1
+
+	ssh -t $host sudo systemctl stop etcd.service
+	sudo rm -rf /var/lib/etcd/*
+	sleep 1
+done
+
+for host in ${HOSTNAMES_SUB}; do
+	echo "stopping fleet.service on $host..."
+	ssh -t $host sudo systemctl stop fleet.service
+	sleep 1
+done

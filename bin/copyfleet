@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# run with parameter of a branch name. e.g.:
+#
+#  $ copyfleet master
+#
+
+if [ $# -eq 0 ]; then
+	echo "USAGE: $0 <branch_name>"
+	exit 1
+fi
+
+BRANCHNAME="$(echo $1 | sed 's./.-.g')"
+
+DIRNAME_FULL=$GOPATH/src/github.com/coreos/fleet/fleetsrc/${BRANCHNAME}
+
+mkdir -p ${DIRNAME_FULL}
+
+cd $GOPATH/src/github.com/coreos/fleet
+./build
+cp -f bin/fleet{d,ctl} ${DIRNAME_FULL}/
+
+HOSTNAMES_MAIN="etcd2"
+HOSTNAMES_SUB="fleet1 fleet2 fleet3"
+MYHOME="${HOME}"
+HOMECORE="/home/core"
+
+for host in $HOSTNAMES_MAIN; do
+	pushd fleetsrc
+	tar czf ${DIRNAME_FULL}.tar.gz ${BRANCHNAME}
+	scp ${DIRNAME_FULL}.tar.gz ${host}:fleetsrc/
+	popd
+
+	echo "extracting fleet binaries on $host ..."
+	ssh $host mkdir -p $MYHOME/fleetsrc
+	ssh $host tar xzf $MYHOME/fleetsrc/${BRANCHNAME}.tar.gz -C $MYHOME/fleetsrc
+	ssh $host cp -f $MYHOME/fleetsrc/${BRANCHNAME}/fleet{d,ctl} $MYHOME/go/bin/
+done
+
+for host in $HOSTNAMES_SUB; do
+	pushd fleetsrc
+	scp ${DIRNAME_FULL}.tar.gz ${host}:fleetsrc/
+	popd
+
+	echo "extracting fleet binaries on $host ..."
+	ssh $host mkdir -p $HOMECORE/fleetsrc
+	ssh $host tar xzf $HOMECORE/fleetsrc/${BRANCHNAME}.tar.gz -C $HOMECORE/fleetsrc
+	ssh $host cp -f $HOMECORE/fleetsrc/${BRANCHNAME}/fleet{d,ctl} $HOMECORE/go/bin/
+done

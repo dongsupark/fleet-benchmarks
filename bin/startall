@@ -1,0 +1,26 @@
+#!/bin/bash
+
+echo "starting etcd and fleet..."
+
+HOSTNAMES_MAIN="etcd1"
+HOSTNAMES_SUB="fleet1 fleet2 fleet3"
+
+for host in ${HOSTNAMES_MAIN}; do
+	echo "starting etcd and fleet services on $host..."
+	ssh -t $host sudo systemctl start etcd.service
+	sleep 1
+
+	ssh -t $host sudo systemctl start fleet.service
+	sleep 1
+done
+
+for host in ${HOSTNAMES_SUB}; do
+	echo "starting fleet on $host..."
+	ssh -t $host sudo systemctl start fleet.service
+	sleep 1
+done
+
+fleetctl list-machines --no-legend
+fleetctl list-unit-files --no-legend
+
+systemctl status fleet.service

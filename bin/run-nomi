@@ -1,0 +1,11 @@
+#!/bin/bash
+
+export PLOTS_DIR=/home/dpark
+
+${PLOTS_DIR}/go/bin/nomi run \
+  --dump-json \
+  --addr=10.132.0.8:54541 \
+  --generate-gnuplots \
+  --benchmark-file=$PLOTS_DIR/nomi-config/benchmarkDef3000Units.yaml \
+  2>&1 | tee -a $(mktemp)
+
